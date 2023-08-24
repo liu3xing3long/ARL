@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from torchmetrics import F1, AUROC
+from torchmetrics import AUROC
+from torchmetrics import F1Score as F1
 from transformers import get_polynomial_decay_schedule_with_warmup, get_cosine_schedule_with_warmup
 from transformers.optimization import AdamW
 

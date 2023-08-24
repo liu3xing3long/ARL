@@ -118,9 +118,14 @@ def make_arrow_mimic_cxr(data, dataset_name, save_dir):
             iid2txt_ents[sample["img_path"]].extend(sample["text_entities"])
             iid2split[sample["img_path"]] = split
 
-    path = len(iid2captions)
-    caption_paths = [path for path in iid2captions if os.path.exists(path)]
-    print(f"+ {len(caption_paths)} images / {path} annotations")
+    caption_paths = []
+    for path in tqdm(iid2captions):
+        if os.path.exists(path):
+            caption_paths.append(path)
+        else:
+            print(fr'NOT exist, {path}')
+
+    print(f"+ {len(caption_paths)} images /  {len(iid2captions)} annotations")
     statistics(iid2captions, iid2txt_ents, iid2split)
     bs = [path2rest_mimic_cxr(path, iid2captions, iid2chexpert, iid2img_ents, iid2txt_ents, iid2split)
           for path in tqdm(caption_paths)]
@@ -147,7 +152,7 @@ def path2rest_vqa(path, split, annotations, label2ans):
     iid = path
     _annotation = annotations[split][iid]
     _annotation = list(_annotation.items())
-    qids, qas = [a[0] for a in _annotation], [a[1] for a in _annotation]
+    qids, qas = [int(a[0]) for a in _annotation], [a[1] for a in _annotation]
     questions = [qa[0] for qa in qas]
     img_ents = [img_ent for qa in qas for img_ent in qa[1]]
     img_ents = sorted(set(img_ents))
@@ -157,9 +162,8 @@ def path2rest_vqa(path, split, annotations, label2ans):
     answer_scores = [a["scores"] for a in answers]
     question_types = [a["answer_type"] for a in answers]
     answers = [[label2ans[l] for l in al] for al in answer_labels]
-    return [binary, questions, answers, answer_labels, answer_scores, iid, qids, question_types,
-            img_ents, txt_ents, split]
-
+    return [binary, questions, answers, answer_labels, answer_scores, iid, qids, question_types, 
+                img_ents, txt_ents, split]
 
 def make_arrow_vqa(data, dataset_name, save_dir):
     questions_train, questions_val, questions_test = data["train"], data["val"], data["test"]

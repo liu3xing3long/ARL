@@ -1,5 +1,5 @@
 python main.py with data_root=data/pretrain_arrows_umls/ \
- num_gpus=4 num_nodes=1 \
+ num_gpus=1 num_nodes=1 \
  task_pretrain_arl \
  per_gpu_batchsize=16 \
  clip16 text_roberta \

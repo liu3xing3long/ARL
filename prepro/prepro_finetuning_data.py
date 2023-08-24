@@ -11,7 +11,11 @@ from collections import Counter
 from scispacy.linking import EntityLinker
 from make_arrow import make_arrow, make_arrow_vqa, make_arrow_melinda
 
-spacy.prefer_gpu()
+os.environ['PYTHONUTF8'] = '1'
+
+ret = spacy.prefer_gpu()
+print(fr'loading spacy, preferGPU {ret}')
+
 nlp = spacy.load("en_core_sci_scibert")
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
 linker = nlp.get_pipe("scispacy_linker")
@@ -113,9 +117,10 @@ def prepro_vqa_vqa_rad():
     image_root = f"{data_root}/images"
 
     for split in ["train", "val", "test"]:
-        with open(f"{data_root}/{split}set.json", "r") as fp:
+        # with open(f"{data_root}/{split}set.json", "r") as fp:
+        with open(f"{data_root}/{split}.json", "rb") as fp:
             samples = json.load(fp)
-            for sample in samples:
+            for sample in tqdm(samples):
                 img_path = os.path.join(image_root, sample["image_name"])
                 qid = sample["qid"]
                 question = sample["question"]
@@ -145,9 +150,9 @@ def prepro_vqa_slack():
     image_root = f"{data_root}/imgs"
 
     for split, file in zip(["train", "val", "test"], ["train.json", "validate.json", "test.json"]):
-        with open(f"{data_root}/{file}", "r") as fp:
+        with open(f"{data_root}/{file}", "rb") as fp:
             samples = json.load(fp)
-            for sample in samples:
+            for sample in tqdm(samples):
                 if sample["q_lang"] != "en":
                     continue
                 img_path = os.path.join(image_root, sample["img_name"])
@@ -180,12 +185,12 @@ def prepro_vqa_medvqa2019():
 
     offset = 0
     for split in ["train", "val", "test"]:
-        samples = open(f"{data_root}/{split}/QA/Modality.csv").read().strip().split("\n") + \
-                  open(f"{data_root}/{split}/QA/Organ.csv").read().strip().split("\n") + \
-                  open(f"{data_root}/{split}/QA/Plane.csv").read().strip().split("\n")
+        samples = open(f"{data_root}/{split}/QA/Modality.txt").read().strip().split("\n") + \
+                  open(f"{data_root}/{split}/QA/Organ.txt").read().strip().split("\n") + \
+                  open(f"{data_root}/{split}/QA/Plane.txt").read().strip().split("\n")
         samples = [[idx + offset] + question.split("|") for idx, question in enumerate(samples)]
         offset += len(samples)
-        for sample in samples:
+        for sample in tqdm(samples):
             img_path = os.path.join(image_root.format(split), sample[1] + ".jpg")
             qid = sample[0]
             question = sample[2]
@@ -317,10 +322,11 @@ def prepro_irtr_roco(min_length=3):
     roco_image_root = "data/pretrain_data/roco/{}/radiology/images/"
 
     for split in ["train", "val", "test"]:
-        with open(f"{roco_data_root}/{split}/radiology/captions.txt", "r") as fp:
+        with open(f"{roco_data_root}/{split}/radiology/captions.txt", "r", encoding='utf-8') as fp:
             lines = fp.read().strip().split("\n")
             random.shuffle(lines)
-            for line_idx, line in enumerate(lines):
+            # for line_idx, line in enumerate(lines):
+            for line in tqdm(lines):
                 str_splits = line.strip().split('\t')
                 if len(str_splits) == 2:
                     img_path = os.path.join(roco_image_root.format(split), str_splits[0] + ".jpg")
@@ -341,9 +347,9 @@ def prepro_irtr_roco(min_length=3):
 
 
 if __name__ == '__main__':
-    prepro_vqa_vqa_rad()
-    prepro_vqa_slack()
-    prepro_vqa_medvqa2019()
-    prepro_vqa_medvqa2021()
-    prepro_cls_melinda()
+    # prepro_vqa_vqa_rad()
+    # prepro_vqa_slack()
+    # prepro_vqa_medvqa2019()
+    # prepro_vqa_medvqa2021()
+    # prepro_cls_melinda()
     prepro_irtr_roco()

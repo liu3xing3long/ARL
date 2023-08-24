@@ -29,7 +29,7 @@ def main(_config):
     run_name = f'{exp_name}-seed{_config["seed"]}-from_{_config["load_path"].replace("/", "_")}'
     tb_logger = pl.loggers.TensorBoardLogger(_config["log_dir"], name=run_name)
     wb_logger = pl.loggers.WandbLogger(
-        project="ACMMM-2022-ARL-finetune" if "finetune" in exp_name else "ACMMM-2022-ARL-pretrain",
+        project="arl-finetune" if "finetune" in exp_name else "arl-pretrain",
         name=run_name
     )
     loggers = [tb_logger, wb_logger]

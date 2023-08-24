@@ -3,7 +3,6 @@ import sklearn.metrics as sklm
 import torch
 from pytorch_lightning.metrics import Metric
 
-
 class Accuracy(Metric):
     def __init__(self, dist_sync_on_step=False):
         super().__init__(dist_sync_on_step=dist_sync_on_step)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import os
 import re
 import json
@@ -12,11 +14,16 @@ from collections import Counter
 from OpenKE.train_transe import train_transe
 from make_arrow import make_arrow, make_arrow_mimic_cxr
 
-spacy.prefer_gpu()
+os.environ['PYTHONUTF8'] = '1'
+
+ret = spacy.prefer_gpu()
+print(fr'loading spacy, preferGPU {ret}')
+
 nlp = spacy.load("en_core_sci_scibert")
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "umls"})
 linker = nlp.get_pipe("scispacy_linker")
 
+print(fr'done !')
 
 def parse_a_text(text):
     entities = []
@@ -165,8 +172,11 @@ def prepro_mimic_cxr(min_length=3):
         "val": [],
         "test": []
     }
+    
     data_root = "data/pretrain_data/mimic_cxr/"
-    image_root = f"{data_root}/files"
+    # image_root = f"{data_root}/files"
+    image_root = f"{data_root}/mimic-cxr-jpg-512/images"
+
     sectioned_path = f"{data_root}/mimic_cxr_sectioned.csv"
     metadata_path = f"{data_root}/mimic-cxr-2.0.0-metadata.csv"
     chexpert_path = f"{data_root}/mimic-cxr-2.0.0-chexpert.csv"
@@ -188,11 +198,14 @@ def prepro_mimic_cxr(min_length=3):
         subject_id = str(sample["subject_id"])
         study_id = str(sample["study_id"])
         dicom_id = str(sample["dicom_id"])
-        img_path = os.path.join(image_root,
-                                "p" + subject_id[:2],
-                                "p" + subject_id,
-                                "s" + study_id,
-                                dicom_id + ".png")
+
+        # img_path = os.path.join(image_root,
+        #                         "p" + subject_id[:2],
+        #                         "p" + subject_id,
+        #                         "s" + study_id,
+        #                         dicom_id + ".png")
+        img_path = os.path.join(image_root, dicom_id + ".jpg")
+
         split = split_data.loc[dicom_id].split
         if split == "validate":
             split = "val"
@@ -243,7 +256,7 @@ def create_entity_vocab(datas, threshold=20):
     relations = []
     triples = []
 
-    for line_idx, line in tqdm(enumerate(fin)):
+    for line_idx, line in tqdm(enumerate(fin), total=len(fin)):
         line_splits = line.strip().split("\t")
         if line_splits[0] not in entity_vocab:
             continue
@@ -294,20 +307,38 @@ def filter_datas(datas, entity2id):
 
 
 def main(cache_path="data/pretrain_data/cache_data.pkl"):
+    print('running')
     if not os.path.exists(cache_path):
         medicat_data = prepro_medicat()
+        fout = open(cache_path + '.medicat', "wb")
+        cache_data = {"medicat_data": medicat_data, }
+        pickle.dump(cache_data, fout)
+        fout.close()
+
         roco_data = prepro_roco()
+        fout = open(cache_path + '.roco', "wb")
+        cache_data = {"roco_data": roco_data, }
+        pickle.dump(cache_data, fout)
+        fout.close()
+
         mimic_cxr_data = prepro_mimic_cxr()
+        fout = open(cache_path + '.mimic', "wb")
+        cache_data = {"mimic_cxr_data": mimic_cxr_data, }
+        pickle.dump(cache_data, fout)
+        fout.close()
+
         fout = open(cache_path, "wb")
         cache_data = {"medicat_data": medicat_data, "roco_data": roco_data, "mimic_cxr_data": mimic_cxr_data}
         pickle.dump(cache_data, fout)
+        fout.close()
+
     else:
         fin = open(cache_path, "rb")
         cache_data = pickle.load(fin, encoding="bytes")
         medicat_data = cache_data["medicat_data"]
         roco_data = cache_data["roco_data"]
         mimic_cxr_data = cache_data["mimic_cxr_data"]
-
+    
     if not (os.path.exists("data/knowledge/train2id.txt") and
             os.path.exists("data/knowledge/entity2id.txt") and
             os.path.exists("data/knowledge/relation2id.txt")):

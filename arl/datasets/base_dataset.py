@@ -48,7 +48,7 @@ class BaseDataset(torch.utils.data.Dataset):
             if 'clip' in transform_key:
                 self.clip_transform = True
                 break
-
+        
         # Read Texts
         if len(names) != 0:
             tables = [
