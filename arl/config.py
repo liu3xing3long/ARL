@@ -42,6 +42,7 @@ def config():
     whole_word_masking = True
     mlm_prob = 0.15
     draw_false_text = 0
+    text_freeze = False
 
     # Transformer Setting
     num_top_layer = 6
@@ -53,6 +54,7 @@ def config():
     num_layers = 6
     mlp_ratio = 4
     drop_rate = 0.1
+    vit_freeze = False
 
     # MIM decoder Setting
     mim_prob = 0.75
@@ -103,13 +105,18 @@ def config():
     ent_embedding_only = False
     finetune_embeddings = False
 
+    # dist-settings
+    local_rank = 0
+
 
 @ex.named_config
 def task_pretrain_arl():
     exp_name = "task_pretrain_arl"
     datasets = ["medicat", "roco", "mimic_cxr"]
+    # image-text-matching, masked-language-modeling, masked-image-modeling, align
     loss_names = _loss_names({"itm": 0.1, "mlm": 1, "mim": 1, "align": 1})
-    batch_size = 256
+    # batch_size = 256
+    batch_size = 64
     max_epoch = 10
     max_steps = 100000
     warmup_steps = 0.1
@@ -131,6 +138,9 @@ def task_pretrain_arl():
 
     precision = 16
     mim_layer = 3
+
+    text_freeze = True
+    vit_freeze = True
 
 
 @ex.named_config
@@ -485,6 +495,17 @@ def text_roberta_large():
     vocab_size = 50265
     input_text_embed_size = 1024
 
+@ex.named_config
+def text_biomednlp():
+    tokenizer = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext"
+    vocab_size = 30522
+    input_text_embed_size = 768
+
+@ex.named_config
+def text_biomedllama2at7b():
+    tokenizer = "PharMolix/BioMedGPT-LM-7B"
+    vocab_size = 30522
+    input_text_embed_size = 768
 
 # random augmentation
 @ex.named_config

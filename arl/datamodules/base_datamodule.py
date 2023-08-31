@@ -4,7 +4,8 @@ from torch.utils.data import DataLoader
 from transformers import (
     DataCollatorForLanguageModeling,
     BertTokenizerFast,
-    RobertaTokenizerFast
+    RobertaTokenizerFast,
+    LlamaTokenizerFast,
 )
 
 from arl.datasets.data_collator import DataCollatorForWholeEntityMask
@@ -15,12 +16,18 @@ def get_pretrained_tokenizer(from_pretrained):
         if torch.distributed.get_rank() == 0:
             if 'roberta' in from_pretrained:
                 RobertaTokenizerFast.from_pretrained(from_pretrained)
-            else:
+            elif 'bert' in from_pretrained.lower():
                 BertTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+            else:
+                LlamaTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
         torch.distributed.barrier()
+
     if 'roberta' in from_pretrained:
         return RobertaTokenizerFast.from_pretrained(from_pretrained)
-    return BertTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+    elif 'bert' in from_pretrained.lower():
+        return BertTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+    else:
+        return LlamaTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
 
 
 class BaseDataModule(LightningDataModule):

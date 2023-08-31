@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from transformers import RobertaConfig, RobertaModel
 from transformers.models.bert.modeling_bert import BertConfig, BertModel
+from transformers import LlamaTokenizer, LlamaConfig, LlamaModel
 
 from arl.modules import objectives, arl_utils
 from arl.modules import prediction_heads
@@ -20,6 +21,7 @@ class ARLTransformerSS(pl.LightningModule):
 
         # == Begin: 1. Build Models ==
         self.is_clip = ('swin' not in config['vit'])
+        print(fr"language model {config['tokenizer']}")
         if 'roberta' in config['tokenizer']:
             bert_config = RobertaConfig(
                 vocab_size=config["vocab_size"],
@@ -31,7 +33,7 @@ class ARLTransformerSS(pl.LightningModule):
                 hidden_dropout_prob=config["drop_rate"],
                 attention_probs_dropout_prob=config["drop_rate"],
             )
-        elif 'bert' in config['tokenizer']:
+        elif 'bert' in config['tokenizer'].lower():
             bert_config = BertConfig(
                 vocab_size=config["vocab_size"],
                 hidden_size=config["hidden_size"],
@@ -42,8 +44,20 @@ class ARLTransformerSS(pl.LightningModule):
                 hidden_dropout_prob=config["drop_rate"],
                 attention_probs_dropout_prob=config["drop_rate"],
             )
+
         else:
-            raise ValueError
+            bert_config = LlamaConfig(
+                vocab_size=config["vocab_size"],
+                hidden_size=config["hidden_size"],
+                num_hidden_layers=config["num_layers"],
+                num_attention_heads=config["num_heads"],
+                intermediate_size=config["hidden_size"] * config["mlp_ratio"],
+                max_position_embeddings=config["max_text_len"],
+                hidden_dropout_prob=config["drop_rate"],
+                attention_probs_dropout_prob=config["drop_rate"],
+            )
+        # else:
+        #    raise ValueError
 
         resolution_after = config['image_size']
         if torch.distributed.is_initialized():
@@ -54,18 +68,24 @@ class ARLTransformerSS(pl.LightningModule):
                     getattr(swin, self.hparams.config["vit"])(pretrained=True, config=self.hparams.config)
                 if 'roberta' in config['tokenizer']:
                     RobertaModel.from_pretrained(config['tokenizer'])
-                else:
+                elif 'bert' in config['tokenizer'].lower():
                     BertModel.from_pretrained(config['tokenizer'])
+                else:
+                    LlamaModel.from_pretrained(config['tokenizer'])
             torch.distributed.barrier()
+
         if self.is_clip:
             self.vision_encoder = build_model(config['vit'], resolution_after=resolution_after)
         else:
             self.vision_encoder = getattr(swin, self.hparams.config["vit"])(pretrained=True, config=self.hparams.config)
             self.vision_pooler = nn.AdaptiveAvgPool1d(1)
+
         if 'roberta' in config['tokenizer']:
             self.language_encoder = RobertaModel.from_pretrained(config['tokenizer'])
-        else:
+        elif 'bert' in config['tokenizer'].lower():
             self.language_encoder = BertModel.from_pretrained(config['tokenizer'])
+        else:
+            self.language_encoder = LlamaModel.from_pretrained(config['tokenizer'])
 
         self.multi_modal_language_proj = nn.Linear(config['input_text_embed_size'], config['hidden_size'])
         self.multi_modal_language_proj.apply(init_weights)
@@ -389,21 +409,27 @@ class ARLTransformerSS(pl.LightningModule):
 
         return total_loss
 
-    def training_epoch_end(self, outs):
+    # def training_epoch_end(self, outs):
+    #     arl_utils.epoch_wrapup(self)
+    def on_train_epoch_end(self):
         arl_utils.epoch_wrapup(self)
 
     def validation_step(self, batch, batch_idx):
         arl_utils.set_task(self)
         output = self(batch)
 
-    def validation_epoch_end(self, outs):
+    # def validation_epoch_end(self, outs):
+    #     arl_utils.epoch_wrapup(self)
+    def on_validation_epoch_end(self):
         arl_utils.epoch_wrapup(self)
 
     def test_step(self, batch, batch_idx):
         arl_utils.set_task(self)
         output = self(batch, test=True)
 
-    def test_epoch_end(self, outs):
+    # def test_epoch_end(self, outs):
+    #     arl_utils.epoch_wrapup(self, test=True)
+    def on_test_epoch_end(self) -> None:
         arl_utils.epoch_wrapup(self, test=True)
 
     def configure_optimizers(self):

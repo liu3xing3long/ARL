@@ -138,3 +138,6 @@ result
 downloaded/
 prepro/OpenKE/benchmarks/
 wandb/
+/code_snippets.sh
+/srun_pretrain.sh
+/srun_pretrain2.sh

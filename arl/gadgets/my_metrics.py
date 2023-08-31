@@ -1,7 +1,9 @@
 import numpy as np
 import sklearn.metrics as sklm
 import torch
-from pytorch_lightning.metrics import Metric
+# from pytorch_lightning.metrics import Metric
+from torchmetrics import Metric
+
 
 class Accuracy(Metric):
     def __init__(self, dist_sync_on_step=False):
