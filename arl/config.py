@@ -94,7 +94,7 @@ def config():
     num_nodes = 1
     load_path = ""
     num_workers = 8
-    precision = 16
+    precision = "16-mixed"
 
     # MELINDA SETTING
     label_column_name = ""
@@ -136,7 +136,8 @@ def task_pretrain_arl():
     hidden_size = 768
     num_heads = 12
 
-    precision = 16
+    precision = "16-mixed"
+
     mim_layer = 3
 
     text_freeze = True
@@ -168,7 +169,7 @@ def task_pretrain_arl_011105():
     hidden_size = 768
     num_heads = 12
 
-    precision = 16
+    precision = "16-mixed"
     mim_layer = 3
 
 
@@ -197,7 +198,7 @@ def task_pretrain_arl_011101():
     hidden_size = 768
     num_heads = 12
 
-    precision = 16
+    precision = "16-mixed"
     mim_layer = 3
 
 

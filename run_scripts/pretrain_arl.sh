@@ -5,9 +5,7 @@ python main.py with data_root=data/pretrain_arrows_umls/ \
  clip16 text_roberta \
  image_size=288 max_text_len=64 max_num_ents=24 \
  tokenizer=downloaded/roberta-base \
- load_path=downloaded/meter.ckpt
-
-
+ load_path=downloaded/meter.ckpt 
 
 # python main.py with data_root=data/pretrain_arrows_umls/ \
 # num_gpus=1 num_nodes=1 \

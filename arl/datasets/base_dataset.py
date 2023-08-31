@@ -180,6 +180,7 @@ class BaseDataset(torch.utils.data.Dataset):
             except Exception as e:
                 print(f"Error while read file idx {index} in {self.names[0]} -> {e}")
                 index = random.randint(0, len(self.index_mapper) - 1)
+        
         return ret
 
     def collate(self, batch, mlm_collator):

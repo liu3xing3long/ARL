@@ -30,8 +30,8 @@ def compute_mlm(pl_module, batch):
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_mlm_loss")(ret["mlm_loss"])
     acc = getattr(pl_module, f"{phase}_mlm_accuracy")(ret["mlm_logits"], ret["mlm_labels"])
-    pl_module.log(f"mlm/{phase}/loss", loss)
-    pl_module.log(f"mlm/{phase}/accuracy", acc)
+    pl_module.log(f"mlm/{phase}/loss", loss, sync_dist=True)
+    pl_module.log(f"mlm/{phase}/accuracy", acc, sync_dist=True)
 
     return ret
 
@@ -68,8 +68,8 @@ def compute_mim(pl_module, batch):
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_mim_loss")(ret["mim_loss"])
     acc = -loss
-    pl_module.log(f"mim/{phase}/loss", loss)
-    pl_module.log(f"mim/{phase}/accuracy", acc)
+    pl_module.log(f"mim/{phase}/loss", loss, sync_dist=True)
+    pl_module.log(f"mim/{phase}/accuracy", acc, sync_dist=True)
 
     return ret
 
@@ -107,8 +107,8 @@ def compute_itm(pl_module, batch):
     phase = "train" if pl_module.training else "val"
     loss = getattr(pl_module, f"{phase}_itm_loss")(ret["itm_loss"])
     acc = getattr(pl_module, f"{phase}_itm_accuracy")(ret["itm_logits"], ret["itm_labels"])
-    pl_module.log(f"itm/{phase}/loss", loss)
-    pl_module.log(f"itm/{phase}/accuracy", acc)
+    pl_module.log(f"itm/{phase}/loss", loss, sync_dist=True)
+    pl_module.log(f"itm/{phase}/accuracy", acc, sync_dist=True)
 
     return ret
 
@@ -136,7 +136,7 @@ def compute_align(pl_module, batch):
     phase = "train" if pl_module.training else "val"
 
     loss = getattr(pl_module, f"{phase}_align_loss")(ret["align_loss"])
-    pl_module.log(f"align/{phase}/loss", loss)
+    pl_module.log(f"align/{phase}/loss", loss, sync_dist=True)
 
     if phase != "train":
         getattr(pl_module, f"{phase}_align_img_aucroc").update(F.sigmoid(ret["img_align_logits"]), ret["img_labels"])
@@ -179,8 +179,8 @@ def compute_vqa(pl_module, batch, test=False):
 
     loss = getattr(pl_module, f"{phase}_vqa_loss")(ret["vqa_loss"])
     score = getattr(pl_module, f"{phase}_vqa_score")(ret["vqa_logits"], ret["vqa_targets"], ret["vqa_answer_types"])
-    pl_module.log(f"vqa/{phase}/loss", loss)
-    pl_module.log(f"vqa/{phase}/score", score)
+    pl_module.log(f"vqa/{phase}/loss", loss, sync_dist=True)
+    pl_module.log(f"vqa/{phase}/score", score, sync_dist=True)
 
     return ret
 
@@ -205,8 +205,8 @@ def compute_cls(pl_module, batch, test=False):
 
     loss = getattr(pl_module, f"{phase}_cls_loss")(ret["cls_loss"])
     acc = getattr(pl_module, f"{phase}_cls_accuracy")(ret["cls_logits"], ret["cls_labels"])
-    pl_module.log(f"cls/{phase}/loss", loss)
-    pl_module.log(f"cls/{phase}/accuracy", acc)
+    pl_module.log(f"cls/{phase}/loss", loss, sync_dist=True)
+    pl_module.log(f"cls/{phase}/accuracy", acc, sync_dist=True)
 
     return ret
 
@@ -257,7 +257,7 @@ def compute_irtr(pl_module, batch, test=False):
         phase = "train" if pl_module.training else "val"
 
     irtr_loss = getattr(pl_module, f"{phase}_irtr_loss")(ret["irtr_loss"])
-    pl_module.log(f"irtr/{phase}/irtr_loss", irtr_loss)
+    pl_module.log(f"irtr/{phase}/irtr_loss", irtr_loss, sync_dist=True)
 
     return ret
 

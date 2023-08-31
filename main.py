@@ -16,6 +16,9 @@ resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
 def fake_init_dist_slurm(backend='nccl', port=29500):
     # if mp.get_start_method(allow_none=True) != 'spawn':
     #     mp.set_start_method('spawn')
+
+    if 'SLURM_PROCID' not in os.environ:
+        return 
     proc_id = int(os.environ['SLURM_PROCID'])
     ntasks = int(os.environ['SLURM_NTASKS'])
     node_list = os.environ['SLURM_NODELIST']
@@ -110,7 +113,7 @@ def main(_config):
     max_steps = _config["max_steps"] if _config["max_steps"] is not None else None
     max_epochs = _config["max_epoch"] if max_steps is None else 1000
 
-    print(fr'train settings: num_gpus {num_gpus}, grad_steps {grad_steps}, max_steps {max_steps}, max_epochs {max_epochs}')
+    print(fr'train settings: num_gpus {num_gpus}, num_workers {_config["num_workers"]}')
 
     # Trainer
     trainer = pl.Trainer(
@@ -119,7 +122,6 @@ def main(_config):
         strategy="ddp_find_unused_parameters_true",
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
-        benchmark=True,
         max_epochs=max_epochs,
         max_steps=max_steps,
         callbacks=callbacks,
@@ -129,7 +131,7 @@ def main(_config):
         enable_model_summary=True,
         fast_dev_run=_config["fast_dev_run"],
         val_check_interval=_config["val_check_interval"],
-        default_root_dir=_config["default_root_dir"]
+        default_root_dir=_config["default_root_dir"],
     )
 
     if not _config["test_only"]:
