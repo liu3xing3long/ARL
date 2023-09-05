@@ -122,7 +122,41 @@ def task_pretrain_arl():
     warmup_steps = 0.1
     whole_word_masking = True
 
-    vocab_size = 30522
+    vocab_size = 30522  
+    max_text_len = 64
+    image_size = 224
+    tokenizer = "bert-base-uncased"
+    train_transform_keys = ["clip"]
+    val_transform_keys = ["clip"]
+    learning_rate = 1e-5
+    val_check_interval = 1.0
+    lr_multiplier_head = 5
+    lr_multiplier_multi_modal = 5
+    num_top_layer = 6
+    hidden_size = 768
+    num_heads = 12
+
+    precision = "16-mixed"
+
+    mim_layer = 3
+
+    text_freeze = True
+    vit_freeze = True
+
+
+@ex.named_config
+def task_pretrain_arl_llama():
+    exp_name = "task_pretrain_arl_llama"
+    datasets = ["medicat", "roco", "mimic_cxr"]
+    # image-text-matching, masked-language-modeling, masked-image-modeling, align
+    loss_names = _loss_names({"itm": 0.1, "mim": 1, "align": 1})
+    batch_size = 64
+    max_epoch = 10
+    max_steps = 100000
+    warmup_steps = 0.1
+    whole_word_masking = False
+
+    vocab_size = 30522  
     max_text_len = 64
     image_size = 224
     tokenizer = "bert-base-uncased"

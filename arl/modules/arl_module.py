@@ -8,6 +8,7 @@ from transformers import LlamaTokenizer, LlamaConfig, LlamaModel
 from arl.modules import objectives, arl_utils
 from arl.modules import prediction_heads
 from arl.modules.language_encoders.bert_model import BertCrossLayer, BertCrossLayerWithKnowledge
+from arl.modules.language_encoders.llama_model import LlamaCrossLayer, LlamaCrossLayerWithKnowledge
 from arl.modules.arl_utils import init_weights
 from arl.modules.vision_encoders import swin_transformer as swin
 from arl.modules.vision_encoders.clip_model import build_model, adapt_position_encoding
@@ -67,10 +68,13 @@ class ARLTransformerSS(pl.LightningModule):
                 else:
                     getattr(swin, self.hparams.config["vit"])(pretrained=True, config=self.hparams.config)
                 if 'roberta' in config['tokenizer']:
+                    print('using roberta model as LLM')
                     RobertaModel.from_pretrained(config['tokenizer'])
                 elif 'bert' in config['tokenizer'].lower():
+                    print('using BERT model as LLM')
                     BertModel.from_pretrained(config['tokenizer'])
                 else:
+                    print('using LLAMA model as LLM')
                     LlamaModel.from_pretrained(config['tokenizer'])
             torch.distributed.barrier()
 
@@ -81,10 +85,13 @@ class ARLTransformerSS(pl.LightningModule):
             self.vision_pooler = nn.AdaptiveAvgPool1d(1)
 
         if 'roberta' in config['tokenizer']:
+            print('using roberta model as LLM')
             self.language_encoder = RobertaModel.from_pretrained(config['tokenizer'])
         elif 'bert' in config['tokenizer'].lower():
+            print('using BERT model as LLM')
             self.language_encoder = BertModel.from_pretrained(config['tokenizer'])
         else:
+            print('using LLAMA model as LLM')
             self.language_encoder = LlamaModel.from_pretrained(config['tokenizer'])
 
         self.multi_modal_language_proj = nn.Linear(config['input_text_embed_size'], config['hidden_size'])
@@ -94,14 +101,22 @@ class ARLTransformerSS(pl.LightningModule):
 
         self.modality_type_embeddings = nn.Embedding(2, config["hidden_size"])
         self.modality_type_embeddings.apply(init_weights)
-
-        self.multi_modal_vision_layers = nn.ModuleList(
-            [BertCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
-        self.multi_modal_vision_layers.apply(init_weights)
-        self.multi_modal_language_layers = nn.ModuleList(
-            [BertCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
-        self.multi_modal_language_layers.apply(init_weights)
-
+        
+        if 'bert' in config['tokenizer'].lower():
+            self.multi_modal_vision_layers = nn.ModuleList(
+                [BertCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
+            self.multi_modal_vision_layers.apply(init_weights)
+            self.multi_modal_language_layers = nn.ModuleList(
+                [BertCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
+            self.multi_modal_language_layers.apply(init_weights)
+        else:
+            self.multi_modal_vision_layers = nn.ModuleList(
+                [LlamaCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
+            self.multi_modal_vision_layers.apply(init_weights)
+            self.multi_modal_language_layers = nn.ModuleList(
+                [LlamaCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
+            self.multi_modal_language_layers.apply(init_weights)
+        
         self.multi_modal_vision_pooler = prediction_heads.Pooler(config["hidden_size"])
         self.multi_modal_vision_pooler.apply(init_weights)
         self.multi_modal_language_pooler = prediction_heads.Pooler(config["hidden_size"])

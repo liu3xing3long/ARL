@@ -52,6 +52,13 @@ def main(_config):
     pl.seed_everything(_config["seed"])
 
     # ================================
+    print('->' * 10 + 'final config' + '->' * 10)
+    for k, v in _config.items():
+        print(fr'{k} -> {v}')
+    print('<-' * 10 + 'final config' + '<-' * 10)
+    # ================================
+
+    # ================================
     fake_init_dist_slurm()
     torch.set_float32_matmul_precision('high')
 
