@@ -115,8 +115,7 @@ def task_pretrain_arl():
     datasets = ["medicat", "roco", "mimic_cxr"]
     # image-text-matching, masked-language-modeling, masked-image-modeling, align
     loss_names = _loss_names({"itm": 0.1, "mlm": 1, "mim": 1, "align": 1})
-    # batch_size = 256
-    batch_size = 64
+    batch_size = 256
     max_epoch = 10
     max_steps = 100000
     warmup_steps = 0.1

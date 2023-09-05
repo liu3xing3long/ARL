@@ -110,16 +110,18 @@ def main(_config):
     # Training Hyper-Parameters
     num_gpus = (_config["num_gpus"] if isinstance(_config["num_gpus"], int) else len(_config["num_gpus"]))
     grad_steps = max(_config["batch_size"] // (_config["per_gpu_batchsize"] * num_gpus * _config["num_nodes"]), 1)
-    max_steps = _config["max_steps"] if _config["max_steps"] is not None else None
-    max_epochs = _config["max_epoch"] if max_steps is None else 1000
+    max_steps = _config["max_steps"] if _config["max_steps"] is not None else -1
+    max_epochs = _config["max_epoch"] if max_steps == -1 else 1000
 
     print(fr'train settings: num_gpus {num_gpus}, num_workers {_config["num_workers"]}')
+    print(fr'train settings: max_epochs {max_epochs}, max_steps {max_steps}, '
+          fr'valcheck_interval {_config["val_check_interval"]}')
 
     # Trainer
     trainer = pl.Trainer(
         accelerator='gpu',
         devices=num_gpus,
-        strategy="ddp_find_unused_parameters_true",
+        strategy="ddp_spawn",
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
         max_epochs=max_epochs,
