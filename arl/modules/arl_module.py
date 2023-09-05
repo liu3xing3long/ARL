@@ -261,7 +261,7 @@ class ARLTransformerSS(pl.LightningModule):
         # == Begin: Text Encoding ==
         uni_modal_text_feats = self.language_encoder.embeddings(input_ids=text_ids)
         text_input_shape = text_masks.size()
-        extended_text_masks = self.language_encoder.get_extended_attention_mask(text_masks, text_input_shape, device)
+        extended_text_masks = self.language_encoder.get_extended_attention_mask(text_masks, text_input_shape)
         for layer in self.language_encoder.encoder.layer:
             uni_modal_text_feats = layer(uni_modal_text_feats, extended_text_masks)[0]
         uni_modal_text_feats = self.multi_modal_language_proj(uni_modal_text_feats)
@@ -284,8 +284,7 @@ class ARLTransformerSS(pl.LightningModule):
         uni_modal_image_feats = self.multi_modal_vision_proj(uni_modal_image_feats)
         image_masks = torch.ones((uni_modal_image_feats.size(0), uni_modal_image_feats.size(1)), dtype=torch.long,
                                  device=device)
-        extended_image_masks = self.language_encoder.get_extended_attention_mask(image_masks, image_masks.size(),
-                                                                                 device)
+        extended_image_masks = self.language_encoder.get_extended_attention_mask(image_masks, image_masks.size())
         # == End  : Image Encoding ==
 
         # == Begin: Assign Type Embeddings ==
@@ -307,7 +306,7 @@ class ARLTransformerSS(pl.LightningModule):
             ent_ids, ent_pos_matrices = batch["text_ent_ids_mlm"], batch["text_pos_matrices_mlm"]
         else:
             ent_ids, ent_pos_matrices = batch["text_ent_ids"], batch["text_pos_matrices"]
-        extend_ent_masks = self.language_encoder.get_extended_attention_mask(ent_ids != -100, ent_ids.shape, device)
+        extend_ent_masks = self.language_encoder.get_extended_attention_mask(ent_ids != -100, ent_ids.shape)
         ent_feats = self.align_head.embeddings(ent_ids)
         z = ent_feats
         # == End  : Reason Using Knowledge ==
