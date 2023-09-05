@@ -22,12 +22,15 @@ def get_pretrained_tokenizer(from_pretrained):
                 LlamaTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
         torch.distributed.barrier()
 
+    tokenizer = None
     if 'roberta' in from_pretrained:
-        return RobertaTokenizerFast.from_pretrained(from_pretrained)
+        tokenizer = RobertaTokenizerFast.from_pretrained(from_pretrained)
     elif 'bert' in from_pretrained.lower():
-        return BertTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+        tokenizer = BertTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
     else:
-        return LlamaTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+        tokenizer = LlamaTokenizerFast.from_pretrained(from_pretrained, do_lower_case="uncased" in from_pretrained)
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    return tokenizer
 
 
 class BaseDataModule(LightningDataModule):
@@ -70,7 +73,10 @@ class BaseDataModule(LightningDataModule):
             else DataCollatorForLanguageModeling
         )
 
-        self.mlm_collator = collator(tokenizer=self.tokenizer, mlm=True, mlm_probability=_config["mlm_prob"])
+        if 'bert' in _config["tokenizer"].lower() or 'robert' in _config["tokenizer"].lower():
+            self.mlm_collator = collator(tokenizer=self.tokenizer, mlm=True, mlm_probability=_config["mlm_prob"])
+        else:
+            self.mlm_collator = collator(tokenizer=self.tokenizer, mlm=False)
         self.setup_flag = False
 
     @property
