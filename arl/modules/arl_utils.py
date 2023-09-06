@@ -82,12 +82,12 @@ def epoch_wrapup(pl_module, test=False):
         pl_module.log(f"{phase}/recalls/tr_r1", tr_r1, sync_dist=True)
         pl_module.log(f"{phase}/recalls/tr_r5", tr_r5, sync_dist=True)
         pl_module.log(f"{phase}/recalls/tr_r10", tr_r10, sync_dist=True)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r1", ir_r1, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r5", ir_r5, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r10", ir_r10, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r1", tr_r1, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r5", tr_r5, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r10", tr_r10, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r1", ir_r1, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r5", ir_r5, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r10", ir_r10, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r1", tr_r1, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r5", tr_r5, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r10", tr_r10, pl_module.global_step)
         the_metric += ir_r1.item() + tr_r1.item()
 
     for loss_name, v in pl_module.hparams.config["loss_names"].items():
@@ -198,7 +198,7 @@ def init_weights(module):
         module.bias.data.zero_()
 
 
-def set_schedule(pl_module):
+def set_schedule(pl_module, size_data, max_epochs, grad_steps):
     lr = pl_module.hparams.config["learning_rate"]
     wd = pl_module.hparams.config["weight_decay"]
     lr_multiplier_head = pl_module.hparams.config["lr_multiplier_head"]
@@ -300,14 +300,15 @@ def set_schedule(pl_module):
     else:
         raise ValueError
 
-    if pl_module.trainer.max_steps is None:
-        max_steps = (
-                len(pl_module.trainer.datamodule.train_dataloader())
-                * pl_module.trainer.max_epochs
-                // pl_module.trainer.accumulate_grad_batches
-        )
-    else:
-        max_steps = pl_module.trainer.max_steps
+    # if pl_module.trainer.max_steps is None:
+    #     max_steps = (
+    #             len(pl_module.trainer.datamodule.train_dataloader())
+    #             * pl_module.trainer.max_epochs
+    #             // pl_module.trainer.accumulate_grad_batches
+    #     )
+    # else:
+    #     max_steps = pl_module.trainer.max_steps
+    max_steps = (size_data * max_epochs // grad_steps)
 
     warmup_steps = pl_module.hparams.config["warmup_steps"]
     if isinstance(pl_module.hparams.config["warmup_steps"], float):

@@ -8,7 +8,8 @@ from torch.utils.data.distributed import DistributedSampler
 from . import _datamodules
 
 
-class MTDataModule(LightningDataModule):
+# class MTDataModule(LightningDataModule):
+class MTDataModule:
     def __init__(self, _config, dist=False):
         datamodule_keys = _config["datasets"]
         assert len(datamodule_keys) > 0
@@ -25,9 +26,13 @@ class MTDataModule(LightningDataModule):
 
         self.dist = dist
 
-    def prepare_data(self):
-        for dm in self.dms:
-            dm.prepare_data()
+        #########################
+        self.setup(None)
+        #########################
+
+    # def prepare_data(self):
+    #     for dm in self.dms:
+    #         dm.prepare_data()
 
     def setup(self, stage):
         for dm in self.dms:
@@ -39,10 +44,6 @@ class MTDataModule(LightningDataModule):
         self.tokenizer = self.dms[0].tokenizer
         self.collate = functools.partial(self.dms[0].train_dataset.collate, mlm_collator=self.dms[0].mlm_collator)
 
-        print(fr'trainset length {len(self.train_dataset)}')
-        print(fr'valset length {len(self.val_dataset)}')
-        print(fr'testset length {len(self.test_dataset)}')
-        
         if self.dist:
             self.train_sampler = DistributedSampler(self.train_dataset, shuffle=True)
             self.val_sampler = DistributedSampler(self.val_dataset, shuffle=True)

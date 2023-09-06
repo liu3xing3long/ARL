@@ -89,7 +89,7 @@ def config():
     # below params varies with the environment
     data_root = ""
     log_dir = "result"
-    per_gpu_batchsize = 0
+    per_gpu_batchsize = 16
     num_gpus = 8
     num_nodes = 1
     load_path = ""

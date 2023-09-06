@@ -1,4 +1,6 @@
-import pytorch_lightning as pl
+import copy
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 from transformers import RobertaConfig, RobertaModel
@@ -14,11 +16,26 @@ from arl.modules.vision_encoders import swin_transformer as swin
 from arl.modules.vision_encoders.clip_model import build_model, adapt_position_encoding
 from arl.modules.vision_encoders.swin_helpers import swin_adapt_position_encoding
 
+from tensorboardX import SummaryWriter
 
-class ARLTransformerSS(pl.LightningModule):
-    def __init__(self, config):
+@dataclass
+class HParams():
+    config: dict = None
+
+
+class ARLTransformerSS(nn.Module):
+    def __init__(self, config, outputpath=None):
         super().__init__()
-        self.save_hyperparameters()
+        # self.save_hyperparameters()
+        self.hparams = HParams()
+        self.hparams.config = copy.deepcopy(config)
+
+        self.device = fr'cuda:{torch.cuda.current_device()}'
+        if outputpath is None:
+            self.writer = None    
+        else:
+            self.writer = SummaryWriter(logdir=outputpath)
+        self.global_step = 0
 
         # == Begin: 1. Build Models ==
         self.is_clip = ('swin' not in config['vit'])
@@ -270,6 +287,11 @@ class ARLTransformerSS(pl.LightningModule):
         text_ids = batch[f"text_ids{do_mlm}"]
         text_labels = batch[f"text_labels{do_mlm}"]
         text_masks = batch[f"text_masks"]
+        # input to device
+        img = img.cuda()
+        text_ids = text_ids.cuda()
+        text_labels = text_labels.cuda()
+        text_masks = text_masks.cuda()
         device = text_ids.device
         # == End  : Fetch the inputs ==
 
@@ -415,12 +437,12 @@ class ARLTransformerSS(pl.LightningModule):
 
         return ret
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, global_step):
         arl_utils.set_task(self)
         output = self(batch)
         total_loss = sum([v * self.hparams.config["loss_names"][k.replace("_loss", "")]
                           for k, v in output.items() if "loss" in k])
-
+        self.global_step = global_step
         return total_loss
 
     # def training_epoch_end(self, outs):
@@ -446,5 +468,13 @@ class ARLTransformerSS(pl.LightningModule):
     def on_test_epoch_end(self) -> None:
         arl_utils.epoch_wrapup(self, test=True)
 
-    def configure_optimizers(self):
-        return arl_utils.set_schedule(self)
+    def configure_optimizers(self, size_data, max_epochs, grad_steps):
+        return arl_utils.set_schedule(self, size_data, max_epochs, grad_steps)
+
+    def log(self, name, value, sync_dist=False):
+        if self.writer is not None:
+            print(fr'step {self.global_step}, name {name}, val {value}')
+            self.writer.add_scalar(name, value, global_step=self.global_step)
+        else:
+            print(fr'LogKEY: {name}, LogVAL: {value}')
+        
