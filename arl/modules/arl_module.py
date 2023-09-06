@@ -403,6 +403,9 @@ class ARLTransformerSS(nn.Module):
     def forward(self, batch, test=False):
         ret = dict()
 
+        # for k, v in batch.items():
+        #     print(fr'FWD: key {k}, type {type(v)}, shape {v.shape if isinstance(v, torch.Tensor) else len(v)}')
+
         if len(self.current_tasks) == 0:
             ret.update(self.infer(batch))
             return ret

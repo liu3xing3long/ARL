@@ -103,6 +103,9 @@ def init_dist(backend='nccl', port=29500):
 def train(model, dataloader, epoch):
     model.train()
     for batch_index, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
+        # for k, v in batch.items():
+        #     print(fr'TRAIN: key {k}, type {type(v)}, shape {v.shape if isinstance(v, torch.Tensor) else len(v)}')
+            
         for k, v in batch.items():
             if isinstance(v, torch.Tensor):
                 batch[k] = v.cuda()
