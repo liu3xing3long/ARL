@@ -6,7 +6,7 @@ from torchmetrics import Metric
 
 
 class Accuracy(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("correct", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -32,7 +32,7 @@ class Accuracy(Metric):
 
 
 class Scalar(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("scalar", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -50,7 +50,7 @@ class Scalar(Metric):
 
 
 class VQAScore(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("score", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -73,7 +73,7 @@ class VQAScore(Metric):
 
 
 class VQARADScore(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("score", default=torch.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0.0), dist_reduce_fx="sum")
@@ -131,7 +131,7 @@ class VQARADScore(Metric):
 
 
 class ROCScore(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("y_trues", default=[], dist_reduce_fx="cat")
         self.add_state("y_scores", default=[], dist_reduce_fx="cat")
@@ -159,7 +159,7 @@ class ROCScore(Metric):
 
 
 class F1Score(Metric):
-    def __init__(self, dist_sync_on_step=False):
+    def __init__(self, dist_sync_on_step=True):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
         self.add_state("y_trues", default=[], dist_reduce_fx="cat")
         self.add_state("y_preds", default=[], dist_reduce_fx="cat")

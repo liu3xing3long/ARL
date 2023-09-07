@@ -12,13 +12,12 @@ srun -n ${GPUS} \
     --gres=gpu:${GPUS_PER_NODE} \
     --ntasks-per-node=${GPUS_PER_NODE} \
     --kill-on-bad-exit=1 \
-    python main.py with data_root=data/pretrain_arrows_umls/ \
+    python main.py with data_root=data/pretrain_arrows_umls/ \ss
     num_gpus=${GPUS_PER_NODE} num_nodes=${NODE_COUNT} \
     task_pretrain_arl \
-    per_gpu_batchsize=16 batch_size=256 num_workers=16 \
+    per_gpu_batchsize=16 batch_size=256 num_workers=32 \
     clip16 text_roberta \
     image_size=288 max_text_len=64 max_num_ents=24 \
     tokenizer=downloaded/roberta-base \
     load_path=downloaded/meter.ckpt
 
-#        image_size=288 max_text_len=64 max_num_ents=24 \

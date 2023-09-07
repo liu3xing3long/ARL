@@ -75,19 +75,18 @@ def epoch_wrapup(pl_module, test=False):
     if (pl_module.hparams.config["get_recall_metric"] and not pl_module.training) \
             or (test and pl_module.hparams.config["loss_names"]["irtr"] >= 1):
         (ir_r1, ir_r5, ir_r10, tr_r1, tr_r5, tr_r10) = compute_irtr_recall(pl_module)
-        print((ir_r1, ir_r5, ir_r10, tr_r1, tr_r5, tr_r10), pl_module.global_step)
         pl_module.log(f"{phase}/recalls/ir_r1", ir_r1, sync_dist=True)
         pl_module.log(f"{phase}/recalls/ir_r5", ir_r5, sync_dist=True)
         pl_module.log(f"{phase}/recalls/ir_r10", ir_r10, sync_dist=True)
         pl_module.log(f"{phase}/recalls/tr_r1", tr_r1, sync_dist=True)
         pl_module.log(f"{phase}/recalls/tr_r5", tr_r5, sync_dist=True)
         pl_module.log(f"{phase}/recalls/tr_r10", tr_r10, sync_dist=True)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r1", ir_r1, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r5", ir_r5, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/ir_r10", ir_r10, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r1", tr_r1, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r5", tr_r5, pl_module.global_step)
-        pl_module.logger.experiment[0].add_scalar("recalls/tr_r10", tr_r10, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r1", ir_r1, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r5", ir_r5, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/ir_r10", ir_r10, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r1", tr_r1, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r5", tr_r5, pl_module.global_step)
+        # pl_module.logger.experiment[0].add_scalar("recalls/tr_r10", tr_r10, pl_module.global_step)
         the_metric += ir_r1.item() + tr_r1.item()
 
     for loss_name, v in pl_module.hparams.config["loss_names"].items():
@@ -292,7 +291,7 @@ def set_schedule(pl_module):
     ]
 
     if optim_type == "adamw":
-        optimizer = AdamW(optimizer_grouped_parameters, lr=lr, eps=1e-8, betas=(0.9, 0.98))
+        optimizer = torch.optim.AdamW(optimizer_grouped_parameters, lr=lr, eps=1e-8, betas=(0.9, 0.98))
     elif optim_type == "adam":
         optimizer = torch.optim.Adam(optimizer_grouped_parameters, lr=lr)
     elif optim_type == "sgd":
@@ -300,7 +299,7 @@ def set_schedule(pl_module):
     else:
         raise ValueError
 
-    if pl_module.trainer.max_steps is None:
+    if pl_module.trainer.max_steps == -1:
         max_steps = (
                 len(pl_module.trainer.datamodule.train_dataloader())
                 * pl_module.trainer.max_epochs
@@ -329,5 +328,9 @@ def set_schedule(pl_module):
         )
 
     sched = {"scheduler": scheduler, "interval": "step"}
+
+    print('->' * 20)
+    print(fr'baseLR {lr}, max_steps {max_steps}')
+    print('->' * 20)
 
     return [optimizer], [sched]

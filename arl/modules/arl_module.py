@@ -20,42 +20,45 @@ class ARLTransformerSS(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
+        # self.batch_size = config["batch_size"]
+        self.batch_size = config["per_gpu_batchsize"]
+
         # == Begin: 1. Build Models ==
         self.is_clip = ('swin' not in config['vit'])
         print(fr"language model {config['tokenizer']}")
         if 'roberta' in config['tokenizer']:
             bert_config = RobertaConfig(
-                vocab_size=config["vocab_size"],
-                hidden_size=config["hidden_size"],
-                num_hidden_layers=config["num_layers"],
-                num_attention_heads=config["num_heads"],
-                intermediate_size=config["hidden_size"] * config["mlp_ratio"],
-                max_position_embeddings=config["max_text_len"],
-                hidden_dropout_prob=config["drop_rate"],
-                attention_probs_dropout_prob=config["drop_rate"],
+                    vocab_size=config["vocab_size"],
+                    hidden_size=config["hidden_size"],
+                    num_hidden_layers=config["num_layers"],
+                    num_attention_heads=config["num_heads"],
+                    intermediate_size=config["hidden_size"] * config["mlp_ratio"],
+                    max_position_embeddings=config["max_text_len"],
+                    hidden_dropout_prob=config["drop_rate"],
+                    attention_probs_dropout_prob=config["drop_rate"],
             )
         elif 'bert' in config['tokenizer'].lower():
             bert_config = BertConfig(
-                vocab_size=config["vocab_size"],
-                hidden_size=config["hidden_size"],
-                num_hidden_layers=config["num_layers"],
-                num_attention_heads=config["num_heads"],
-                intermediate_size=config["hidden_size"] * config["mlp_ratio"],
-                max_position_embeddings=config["max_text_len"],
-                hidden_dropout_prob=config["drop_rate"],
-                attention_probs_dropout_prob=config["drop_rate"],
+                    vocab_size=config["vocab_size"],
+                    hidden_size=config["hidden_size"],
+                    num_hidden_layers=config["num_layers"],
+                    num_attention_heads=config["num_heads"],
+                    intermediate_size=config["hidden_size"] * config["mlp_ratio"],
+                    max_position_embeddings=config["max_text_len"],
+                    hidden_dropout_prob=config["drop_rate"],
+                    attention_probs_dropout_prob=config["drop_rate"],
             )
 
         else:
             bert_config = LlamaConfig(
-                vocab_size=config["vocab_size"],
-                hidden_size=config["hidden_size"],
-                num_hidden_layers=config["num_layers"],
-                num_attention_heads=config["num_heads"],
-                intermediate_size=config["hidden_size"] * config["mlp_ratio"],
-                max_position_embeddings=config["max_text_len"],
-                hidden_dropout_prob=config["drop_rate"],
-                attention_probs_dropout_prob=config["drop_rate"],
+                    vocab_size=config["vocab_size"],
+                    hidden_size=config["hidden_size"],
+                    num_hidden_layers=config["num_layers"],
+                    num_attention_heads=config["num_heads"],
+                    intermediate_size=config["hidden_size"] * config["mlp_ratio"],
+                    max_position_embeddings=config["max_text_len"],
+                    hidden_dropout_prob=config["drop_rate"],
+                    attention_probs_dropout_prob=config["drop_rate"],
             )
         # else:
         #    raise ValueError
@@ -101,22 +104,22 @@ class ARLTransformerSS(pl.LightningModule):
 
         self.modality_type_embeddings = nn.Embedding(2, config["hidden_size"])
         self.modality_type_embeddings.apply(init_weights)
-        
+
         if 'bert' in config['tokenizer'].lower():
             self.multi_modal_vision_layers = nn.ModuleList(
-                [BertCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
+                    [BertCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
             self.multi_modal_vision_layers.apply(init_weights)
             self.multi_modal_language_layers = nn.ModuleList(
-                [BertCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
+                    [BertCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
             self.multi_modal_language_layers.apply(init_weights)
         else:
             self.multi_modal_vision_layers = nn.ModuleList(
-                [LlamaCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
+                    [LlamaCrossLayer(bert_config) for _ in range(config['num_top_layer'])])
             self.multi_modal_vision_layers.apply(init_weights)
             self.multi_modal_language_layers = nn.ModuleList(
-                [LlamaCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
+                    [LlamaCrossLayerWithKnowledge(bert_config) for _ in range(config['num_top_layer'])])
             self.multi_modal_language_layers.apply(init_weights)
-        
+
         self.multi_modal_vision_pooler = prediction_heads.Pooler(config["hidden_size"])
         self.multi_modal_vision_pooler.apply(init_weights)
         self.multi_modal_language_pooler = prediction_heads.Pooler(config["hidden_size"])
@@ -159,20 +162,20 @@ class ARLTransformerSS(pl.LightningModule):
         if self.hparams.config["loss_names"]["vqa"] > 0:
             vs = self.hparams.config["vqa_label_size"]
             self.vqa_head = nn.Sequential(
-                nn.Linear(hs * 2, hs * 2),
-                nn.LayerNorm(hs * 2),
-                nn.GELU(),
-                nn.Linear(hs * 2, vs),
+                    nn.Linear(hs * 2, hs * 2),
+                    nn.LayerNorm(hs * 2),
+                    nn.GELU(),
+                    nn.Linear(hs * 2, vs),
             )
             self.vqa_head.apply(init_weights)
 
         if self.hparams.config["loss_names"]["cls"] > 0:
             ms = self.hparams.config["melinda_label_size"][self.hparams.config["label_column_name"]]
             self.cls_head = nn.Sequential(
-                nn.Linear(hs * 2, hs * 2),
-                nn.LayerNorm(hs * 2),
-                nn.GELU(),
-                nn.Linear(hs * 2, ms),
+                    nn.Linear(hs * 2, hs * 2),
+                    nn.LayerNorm(hs * 2),
+                    nn.GELU(),
+                    nn.Linear(hs * 2, ms),
             )
             self.cls_head.apply(init_weights)
 
@@ -358,7 +361,7 @@ class ARLTransformerSS(pl.LightningModule):
             multi_modal_image_cls_feats = self.multi_modal_vision_pooler(y)
         else:
             avg_image_feats = self.vision_pooler(multi_modal_image_feats.transpose(1, 2)).view(
-                multi_modal_image_feats.size(0), 1, -1)
+                    multi_modal_image_feats.size(0), 1, -1)
             multi_modal_image_cls_feats = self.multi_modal_vision_pooler(avg_image_feats)
         multi_modal_cls_feats = torch.cat([multi_modal_text_cls_feats, multi_modal_image_cls_feats], dim=-1)
         # == End  : == Output Multi-Modal Features ==
@@ -448,3 +451,25 @@ class ARLTransformerSS(pl.LightningModule):
 
     def configure_optimizers(self):
         return arl_utils.set_schedule(self)
+
+    from typing import Any, Callable, Dict, List, Mapping, Optional, overload, Sequence, Tuple, Union
+
+    def log(self,
+            name: str,
+            value,
+            prog_bar: bool = False,
+            logger: bool = True,
+            on_step: Optional[bool] = None,
+            on_epoch: Optional[bool] = None,
+            reduce_fx: Union[str, Callable] = "mean",
+            enable_graph: bool = False,
+            sync_dist: bool = False,
+            sync_dist_group: Optional[Any] = None,
+            add_dataloader_idx: bool = True,
+            batch_size: Optional[int] = None,
+            metric_attribute: Optional[str] = None,
+            rank_zero_only: bool = False,
+            ) -> None:
+
+        super().log(name, value, prog_bar, logger, on_step, on_epoch, reduce_fx, enable_graph,
+                    sync_dist, sync_dist_group, add_dataloader_idx, self.batch_size, metric_attribute, rank_zero_only)

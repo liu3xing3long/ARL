@@ -93,8 +93,8 @@ def config():
     num_gpus = 8
     num_nodes = 1
     load_path = ""
-    num_workers = 8
-    precision = "16-mixed"
+    num_workers = 32
+    precision = 32
 
     # MELINDA SETTING
     label_column_name = ""
@@ -105,8 +105,9 @@ def config():
     ent_embedding_only = False
     finetune_embeddings = False
 
-    # dist-settings
+    # dist settings
     local_rank = 0
+    ddp_port = 25900
 
 
 @ex.named_config
@@ -135,7 +136,7 @@ def task_pretrain_arl():
     hidden_size = 768
     num_heads = 12
 
-    precision = "16-mixed"
+    precision = 32
 
     mim_layer = 3
 
@@ -169,7 +170,7 @@ def task_pretrain_arl_llama():
     hidden_size = 768
     num_heads = 12
 
-    precision = "16-mixed"
+    precision = 32
 
     mim_layer = 3
 
@@ -202,7 +203,7 @@ def task_pretrain_arl_011105():
     hidden_size = 768
     num_heads = 12
 
-    precision = "16-mixed"
+    precision = 32
     mim_layer = 3
 
 
@@ -231,7 +232,7 @@ def task_pretrain_arl_011101():
     hidden_size = 768
     num_heads = 12
 
-    precision = "16-mixed"
+    precision = 32
     mim_layer = 3
 
 

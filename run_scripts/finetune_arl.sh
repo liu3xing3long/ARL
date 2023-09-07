@@ -53,7 +53,7 @@ python main.py with seed=${seed} data_root=data/finetune_arrows_umls/ \
 python main.py with data_root=data/finetune_arrows_umls/ \
  num_gpus=${num_gpus} num_nodes=1 \
  task_finetune_irtr_roco get_recall_metric=True \
- pwdper_gpu_batchsize=${per_gpu_batchsize} \
+ per_gpu_batchsize=${per_gpu_batchsize} \
  clip16 text_roberta \
  image_size=288 \
  tokenizer=downloaded/roberta-base \

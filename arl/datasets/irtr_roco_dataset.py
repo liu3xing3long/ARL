@@ -19,3 +19,4 @@ class IRTRROCODataset(BaseDataset):
 
     def __getitem__(self, index):
         return self.get_suite(index)
+

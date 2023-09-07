@@ -13,7 +13,21 @@ rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (4096, rlimit[1]))
 
 
-def fake_init_dist_slurm(backend='nccl', port=29500):
+def get_logger(name):
+    import logging
+    import logging.handlers
+    import  sys
+
+    file_handler = logging.StreamHandler(sys.stdout)
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    logger.addHandler(file_handler)
+    return logger
+
+
+def fake_init_dist_slurm(port=25900):
+    # import torch.multiprocessing as mp
     # if mp.get_start_method(allow_none=True) != 'spawn':
     #     mp.set_start_method('spawn')
 
@@ -52,14 +66,14 @@ def main(_config):
     pl.seed_everything(_config["seed"])
 
     # ================================
-    print('->' * 10 + 'final config' + '->' * 10)
-    for k, v in _config.items():
-        print(fr'{k} -> {v}')
-    print('<-' * 10 + 'final config' + '<-' * 10)
+    # print('->' * 10 + 'final config' + '->' * 10)
+    # for k, v in _config.items():
+    #     print(fr'{k} -> {v}')
+    # print('<-' * 10 + 'final config' + '<-' * 10)
     # ================================
 
     # ================================
-    fake_init_dist_slurm()
+    fake_init_dist_slurm(port=_config['ddp_port'])
     torch.set_float32_matmul_precision('high')
 
     os.environ['LOCAL_RANK'] = str(_config['local_rank'])
@@ -128,7 +142,7 @@ def main(_config):
     trainer = pl.Trainer(
         accelerator='gpu',
         devices=num_gpus,
-        strategy="ddp_spawn",
+        strategy="ddp_find_unused_parameters_true",
         num_nodes=_config["num_nodes"],
         precision=_config["precision"],
         max_epochs=max_epochs,
@@ -136,7 +150,7 @@ def main(_config):
         callbacks=callbacks,
         logger=loggers,
         accumulate_grad_batches=grad_steps,
-        log_every_n_steps=10,
+        log_every_n_steps=1,
         enable_model_summary=True,
         fast_dev_run=_config["fast_dev_run"],
         val_check_interval=_config["val_check_interval"],
@@ -149,3 +163,6 @@ def main(_config):
             trainer.test(ckpt_path="best" if "irtr" not in _config["exp_name"] else None, datamodule=dm)
     else:
         trainer.test(model, datamodule=dm)
+
+
+

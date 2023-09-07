@@ -261,8 +261,7 @@ def compute_irtr(pl_module, batch, test=False):
 
     return ret
 
-
-@torch.no_grad()
+# @torch.inference_mode()
 def compute_irtr_recall(pl_module):
     text_dset = pl_module.trainer.datamodule.dms[0].make_no_false_val_dset()
     text_dset.tokenizer = pl_module.trainer.datamodule.dms[0].tokenizer

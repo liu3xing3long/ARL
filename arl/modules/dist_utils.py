@@ -92,11 +92,23 @@ def _get_global_gloo_group():
         return dist.group.WORLD
 
 
+@functools.lru_cache()
+def _get_global_nccl_group():
+    """
+    Return a process group based on gloo backend, containing all the ranks
+    The result is cached.
+    """
+    if dist.get_backend() == "nccl":
+        return dist.new_group(backend="nccl")
+    else:
+        return dist.group.WORLD
+
+
 def _serialize_to_tensor(data, group):
     backend = dist.get_backend(group)
     assert backend in ["gloo", "nccl"]
-    device = torch.device("cpu" if backend == "gloo" else "cuda")
 
+    device = torch.device("cpu" if backend == "gloo" else "cuda")
     buffer = pickle.dumps(data)
     if len(buffer) > 1024 ** 3:
         logger = logging.getLogger(__name__)
@@ -105,7 +117,8 @@ def _serialize_to_tensor(data, group):
                 get_rank(), len(buffer) / (1024 ** 3), device
             )
         )
-    storage = torch.ByteStorage.from_buffer(buffer)
+    # storage = torch.ByteStorage.from_buffer(buffer)
+    storage = torch.UntypedStorage.from_buffer(buffer, dtype=torch.uint8)
     tensor = torch.ByteTensor(storage).to(device=device)
     return tensor
 
@@ -125,6 +138,7 @@ def _pad_to_largest_tensor(tensor, group):
         torch.zeros([1], dtype=torch.int64, device=tensor.device)
         for _ in range(world_size)
     ]
+
     dist.all_gather(size_list, local_size, group=group)
     size_list = [int(size.item()) for size in size_list]
 
@@ -155,12 +169,12 @@ def all_gather(data, group=None):
     if get_world_size() == 1:
         return [data]
     if group is None:
-        group = _get_global_gloo_group()
+        # group = _get_global_gloo_group()
+        group = _get_global_nccl_group()
     if dist.get_world_size(group) == 1:
         return [data]
 
     tensor = _serialize_to_tensor(data, group)
-
     size_list, tensor = _pad_to_largest_tensor(tensor, group)
     max_size = max(size_list)
 
@@ -169,6 +183,7 @@ def all_gather(data, group=None):
         torch.empty((max_size,), dtype=torch.uint8, device=tensor.device)
         for _ in size_list
     ]
+
     dist.all_gather(tensor_list, tensor, group=group)
 
     data_list = []
@@ -196,7 +211,8 @@ def gather(data, dst=0, group=None):
     if get_world_size() == 1:
         return [data]
     if group is None:
-        group = _get_global_gloo_group()
+        # group = _get_global_gloo_group()
+        group = _get_global_nccl_group()
     if dist.get_world_size(group=group) == 1:
         return [data]
     rank = dist.get_rank(group=group)
