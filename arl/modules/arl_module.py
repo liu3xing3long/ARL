@@ -476,8 +476,7 @@ class ARLTransformerSS(nn.Module):
 
     def log(self, name, value, sync_dist=False):
         if self.writer is not None:
-            print(fr'step {self.global_step}, name {name}, val {value}')
             self.writer.add_scalar(name, value, global_step=self.global_step)
         else:
-            print(fr'LogKEY: {name}, LogVAL: {value}')
+            print(fr'step {self.global_step}, name {name}, val {value}')
         

@@ -100,8 +100,11 @@ def init_dist(backend='nccl', port=29500):
     return rank, world_size
 
 ######################################################
-def train(model, dataloader, epoch):
+def train(model, dataloader, list_optmizer, list_scheduler, epoch):
     model.train()
+    for lo in list_optmizer:
+        lo.zero_grad()
+
     for batch_index, batch in tqdm(enumerate(dataloader), total=len(dataloader)):
         # for k, v in batch.items():
         #     print(fr'TRAIN: key {k}, type {type(v)}, shape {v.shape if isinstance(v, torch.Tensor) else len(v)}')
@@ -109,7 +112,14 @@ def train(model, dataloader, epoch):
         for k, v in batch.items():
             if isinstance(v, torch.Tensor):
                 batch[k] = v.cuda()
-        model.module.training_step(batch, global_step=epoch * len(dataloader) + batch_index)  
+        loss = model.module.training_step(batch, global_step=epoch * len(dataloader) + batch_index)  
+        loss.backward()
+
+        for lo in list_optmizer:
+            lo.step()
+        for ls in list_scheduler:
+            ls["scheduler"].step()
+        
     model.module.on_train_epoch_end()
 
 ######################################################
@@ -162,6 +172,7 @@ def main(_config):
     datamodule = MTDataModule(_config, dist=True)
 
     # Module
+    _log_msg(fr'full_log_path {full_log_path}')
     model = ARLTransformerSS(_config, outputpath=full_log_path)
 
     # Training Hyper-Parameters
@@ -176,8 +187,7 @@ def main(_config):
 
     ##############################
     model = model.cuda()
-    model.configure_optimizers(len(datamodule.train_dataset), max_epochs, grad_steps)
-
+    list_optmizer, list_scheduler = model.configure_optimizers(len(datamodule.train_dataset), max_epochs, grad_steps)
     broadcast_params(model)
     ddp_model = DistributedDataParallel(model, device_ids=[g_rank], output_device=g_rank)
     pytorch_total_params = sum(p.numel() for p in ddp_model.parameters())
@@ -192,13 +202,15 @@ def main(_config):
         if datamodule.train_sampler is not None:
             datamodule.train_sampler.set_epoch(epoch)
         # Train for one epoch
-        train(ddp_model, datamodule.train_dataloader(), epoch)
+        train(ddp_model, datamodule.train_dataloader(), 
+              list_optmizer, list_scheduler, epoch)
 
         ##################################
         if datamodule.val_sampler is not None:
             datamodule.val_sampler.set_epoch(epoch)
         # Evaluate on validation set
-        val_loss = validate(ddp_model, datamodule.val_dataloader(), epoch)
+        val_loss = validate(ddp_model, datamodule.val_dataloader(), 
+                            list_optmizer, list_scheduler, epoch)
 
 
 if __name__ == '__main__':
