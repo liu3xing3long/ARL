@@ -306,38 +306,11 @@ def filter_datas(datas, entity2id):
     return datas
 
 
-def main(cache_path="data/pretrain_data/cache_data.pkl"):
+def main():
     print('running')
-    if not os.path.exists(cache_path):
-        medicat_data = prepro_medicat()
-        fout = open(cache_path + '.medicat', "wb")
-        cache_data = {"medicat_data": medicat_data, }
-        pickle.dump(cache_data, fout)
-        fout.close()
-
-        roco_data = prepro_roco()
-        fout = open(cache_path + '.roco', "wb")
-        cache_data = {"roco_data": roco_data, }
-        pickle.dump(cache_data, fout)
-        fout.close()
-
-        mimic_cxr_data = prepro_mimic_cxr()
-        fout = open(cache_path + '.mimic', "wb")
-        cache_data = {"mimic_cxr_data": mimic_cxr_data, }
-        pickle.dump(cache_data, fout)
-        fout.close()
-
-        fout = open(cache_path, "wb")
-        cache_data = {"medicat_data": medicat_data, "roco_data": roco_data, "mimic_cxr_data": mimic_cxr_data}
-        pickle.dump(cache_data, fout)
-        fout.close()
-
-    else:
-        fin = open(cache_path, "rb")
-        cache_data = pickle.load(fin, encoding="bytes")
-        medicat_data = cache_data["medicat_data"]
-        roco_data = cache_data["roco_data"]
-        mimic_cxr_data = cache_data["mimic_cxr_data"]
+    medicat_data = prepro_medicat()
+    roco_data = prepro_roco()
+    mimic_cxr_data = prepro_mimic_cxr()
     
     if not (os.path.exists("data/knowledge/train2id.txt") and
             os.path.exists("data/knowledge/entity2id.txt") and

@@ -73,7 +73,7 @@ class BaseDataset(torch.utils.data.Dataset):
         self.all_img_ents = self.table["img_ents"].to_pandas().tolist()
         self.all_txt_ents = self.table["txt_ents"].to_pandas().tolist()
         self.ent2id = open("data/knowledge/entity2id.txt").read().strip().split("\n")[1:]
-        self.ent2id = {kv.split("\t")[0]: kv.split("\t")[0] for kv in self.ent2id}
+        self.ent2id = {kv.split("\t")[0]: kv.split("\t")[2] for kv in self.ent2id}
         self.id2ent = {v: k for k, v in self.ent2id.items()}
 
         # Record Index Mappings

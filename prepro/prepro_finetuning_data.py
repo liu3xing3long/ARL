@@ -117,8 +117,7 @@ def prepro_vqa_vqa_rad():
     image_root = f"{data_root}/images"
 
     for split in ["train", "val", "test"]:
-        # with open(f"{data_root}/{split}set.json", "r") as fp:
-        with open(f"{data_root}/{split}.json", "rb") as fp:
+        with open(f"{data_root}/{split}set.json", "r", encoding='utf-8') as fp:
             samples = json.load(fp)
             for sample in tqdm(samples):
                 img_path = os.path.join(image_root, sample["image_name"])
