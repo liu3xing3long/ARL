@@ -384,6 +384,18 @@ class ARLTransformerSS(pl.LightningModule):
     def forward(self, batch, test=False):
         ret = dict()
 
+        print('->' * 10 + 'batch contents' + '->' * 10)
+        for k, v in batch.items():
+            print(fr'key {k}, type {type(v)}, shape {v.shape if isinstance(v, torch.Tensor) else len(v)}')
+
+            if k == 'text':
+                for vvidx, vv in enumerate(v):
+                    print(f'\t {k}, {vvidx}: {vv}')
+            if k == 'image':
+                    print(f'\t {k}, {v[0].shape}')
+
+        print('<-' * 10 + 'batch contents' + '<-' * 10)
+
         if len(self.current_tasks) == 0:
             ret.update(self.infer(batch))
             return ret
