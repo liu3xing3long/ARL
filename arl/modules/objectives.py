@@ -157,6 +157,10 @@ def compute_vqa(pl_module, batch, test=False):
     vqa_scores = batch["vqa_scores"]
     vqa_answer_types = torch.tensor(batch["answer_types"]).to(pl_module.device)
 
+    # print(fr'vqa_labels {vqa_labels}')
+    # print(fr'vqa_scores {vqa_scores}')
+    # print('<-' * 30)
+
     for i, (_label, _score) in enumerate(zip(vqa_labels, vqa_scores)):
         for l, s in zip(_label, _score):
             vqa_targets[i, l] = s
@@ -261,7 +265,7 @@ def compute_irtr(pl_module, batch, test=False):
 
     return ret
 
-# @torch.inference_mode()
+@torch.inference_mode()
 def compute_irtr_recall(pl_module):
     text_dset = pl_module.trainer.datamodule.dms[0].make_no_false_val_dset()
     text_dset.tokenizer = pl_module.trainer.datamodule.dms[0].tokenizer

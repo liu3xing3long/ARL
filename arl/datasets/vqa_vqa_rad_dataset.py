@@ -35,6 +35,13 @@ class VQAVQARADDataset(BaseDataset):
         scores = self.table["answer_scores"][index][question_index].as_py()
         answer_types = self.table["answer_type"][index][question_index].as_py()
 
+        # print('->' * 30)
+        # print(fr'text: {text}')
+        # print(fr'vqa_answer: {answers}')
+        # print(fr'vqa_labels: {labels}')
+        # print(fr'answer_types: {answer_types}')
+        # print('->' * 30)
+
         return {
             "image": image_tensor,
             "text": text,
