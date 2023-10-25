@@ -55,8 +55,8 @@ def build_from_arrow(dataset, splits=None,input_root_path='../data/pretrain_arro
         
 
 if __name__ == '__main__':
-    build_from_arrow('mimic_cxr')
+    # build_from_arrow('mimic_cxr')
+    # build_from_arrow('medicat')
     build_from_arrow('roco')
-    build_from_arrow('medicat')
 
 
